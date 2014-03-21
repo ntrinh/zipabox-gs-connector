@@ -15,6 +15,7 @@ https://github.com/djoulz22/zipabox
  */
 function _initLogin() {
   var paramName = PropertiesService.getScriptProperties().getProperty("paramSheet");
+  CacheService.getPrivateCache().put("paramSheet", paramName);
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(paramName)
   var range = getPropertiesRangeByName("ZIPABOX");
   var search = range.getValues();    
@@ -187,8 +188,8 @@ function collectDataFromZipabox() {
   
   // Callback event: Get logs for debug after disconnect
   zipabox.events.OnAfterDisconnect = function() {
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Logs");
-    sheet.getRange(1, 1).setValue(Logger.getLog());
+    //var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Logs");
+    //sheet.getRange(1, 1).setValue(Logger.getLog());
   };
   
   /****************************
@@ -211,7 +212,7 @@ function sendToSense() {
   // Callback event: Retrieving data from "SENSE" section in the spreadsheet before sending feeds
   opensense.events.OnBeforeSendFeeds = function(){
     var senseSection = getPropertiesRangeByName("SENSE").getValues();
-    var userProperties = PropertiesService.getUserProperties();
+    //var userProperties = PropertiesService.getUserProperties();
     
     for(var i=0; i< senseSection.length; i++) {
       switch(senseSection[i][0]) {
