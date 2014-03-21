@@ -32,28 +32,3 @@ function isEmpty(obj) {
     return Object.keys(obj).length === 0;
 }
 
-
-/**
- * Fetch URL with session ID in cookie
- */
-function fetchURL(url) {
-  var cookie = PropertiesService.getUserProperties().getProperty('cookieZipabox');
-  
-  // Header of the request : the session ID need to be transmitted
-  var headers = {"Cookie": cookie};
-  
-  var options =
-      {
-        "method" : "get",        
-        "headers" : headers
-      };
-  
-  var response = UrlFetchApp.fetch(url, options);
-  
-  if(response.getResponseCode() != 200) {
-    Logger.log("Error getting data on Zipato: " + response);
-    return false;
-  }
-  
-  return response;  
-}
