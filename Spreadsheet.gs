@@ -86,7 +86,7 @@ function getPropertiesRangeByName(sectionName, tabName) {
   }
   
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(tabName);
-  var rowPos = getRowIndexByName(sectionName);
+  var rowPos = getRowIndexByName(sectionName, tabName);
   var lastRow = sheet.getLastRow();
   var lastColumn = sheet.getLastColumn();
   
@@ -135,7 +135,8 @@ function getFeedID(typeDevice,deviceName,deviceID) {
   writelog("checking for typeDevice["+typeDevice+"] / deviceName["+deviceName+"] / deviceID["+deviceID+"]");
   
   var feedID = 0;
-  var range = getPropertiesRangeByName(typeDevice);
+  var paramName = CacheService.getPrivateCache().get("paramSheet");
+  var range = getPropertiesRangeByName(typeDevice, paramName);
   
   // If no device is found return 0
   if(!range) {
