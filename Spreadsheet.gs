@@ -151,7 +151,7 @@ function getFeedID(typeDevice,deviceName,deviceID) {
     if(!listDevices[i][3]) return 0;
     
     // get the sense feedID of the device
-    if(listDevices[i][0] == deviceName || listDevices[i][1] == deviceID) {
+    if(listDevices[i][1] == deviceID || listDevices[i][0] == deviceName) {
       feedID = listDevices[i][2];
       writelog("FeedID found = "+feedID+" for device ["+deviceName+"]");
       break;
