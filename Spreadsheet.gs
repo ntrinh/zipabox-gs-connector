@@ -21,10 +21,6 @@ function onOpen() {
       functionName : "processSensors"
     },
     {
-      name : "Prepare all datas for sense",
-      functionName : "processAll"
-    },
-    {
       name : "Send feeds to sense",
       functionName : "sendToSense"
     }
