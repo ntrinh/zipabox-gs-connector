@@ -61,12 +61,13 @@ function _initLogin() {
 
 /**
  * Collect values for creating a feed
- * @param uuid: uuid endpoint of de device
+ * @param deviceType: type of the device (meters, sensors, lights...)
+ * @param uuid: uuid of the device (check logs to see the uuid of the device)
  * @param deviceName: name of the device
  * @param value: value of the meter
  */
-function CollectValuesForFeeds(uuid, deviceName,value){
-  var feedID = getFeedID(deviceName, deviceName, uuid);
+function CollectValuesForFeeds(deviceType, uuid, deviceName, value){
+  var feedID = getFeedID(deviceType, deviceName, uuid);
   
   if (feedID != 0){
     writelog("Collecting device value for feeding...");
@@ -80,7 +81,7 @@ function CollectValuesForFeeds(uuid, deviceName,value){
       "deviceName": deviceName,
       "uuid": uuid
     };
-    writelog("feedID: "+feedID+"\tValue: "+value);                
+    writelog("feedID: "+feedID+"\tValue: "+value+"\tUUID: "+uuid);                
   }
 }
 
@@ -89,14 +90,14 @@ function CollectValuesForFeeds(uuid, deviceName,value){
  * Get the temperature of a device
  * @param attributeValue : attribute in JSON returned by the zipabox
  * @param name : name of the device
- * @param deviceId : uuid endpoint of the device
+ * @param deviceId : uuid of the device (check logs to see the uuid of the device)
  */
 function _getTemperature(attributeValue, name, deviceId) {
   writelog("==> _getTemperature ***");
   
   // Apply a filter on TEMPERATURE                
   if (attributeValue['definition']['name'] == "TEMPERATURE" || attributeValue['definition']['name'] == "TEMPERATURE_IN_ROOM") {
-    CollectValuesForFeeds(deviceId, name, attributeValue['value']);
+    CollectValuesForFeeds("meters", deviceId, name, attributeValue['value']);
   }
 }
 
@@ -105,14 +106,14 @@ function _getTemperature(attributeValue, name, deviceId) {
  * Get the humidity of a device
  * @param attributeValue : attribute in JSON returned by the zipabox
  * @param name : name of the device
- * @param deviceId : id of the device
+ * @param deviceId : uuid of the device (check logs to see the uuid of the device)
  */
 function _getHumidity(attributeValue, name, deviceId) {
   Logger.log("==> _getHumidity ***");
   
   // Apply a filter on HUMIDITY               
   if (attributeValue['definition']['name'] == "HUMIDITY") {
-    CollectValuesForFeeds(deviceId, name, attributeValue['value']);
+    CollectValuesForFeeds("meters", deviceId, name, attributeValue['value']);
   }
 }
 
@@ -121,14 +122,14 @@ function _getHumidity(attributeValue, name, deviceId) {
  * Get the luminance of a device
  * @param attributeValue : attribute in JSON returned by the zipabox
  * @param name : name of the device
- * @param deviceId : id of the device
+ * @param deviceId : uuid of the device (check logs to see the uuid of the device)
  */
 function _getLuminance(attributeValue, name, deviceId) {
   Logger.log("==> _getLuminance ***");
   
   // Apply a filter on LUMINANCE              
   if (attributeValue['definition']['name'] == "LUMINANCE") {
-    CollectValuesForFeeds(deviceId, name, attributeValue['value']);
+    CollectValuesForFeeds("meters", deviceId, name, attributeValue['value']);
   }
 }
 
@@ -137,14 +138,30 @@ function _getLuminance(attributeValue, name, deviceId) {
  * Get the current consumption
  * @param attributeValue : attribute in JSON returned by the zipabox
  * @param name : name of the device
- * @param deviceId : id of the device
+ * @param deviceId : uuid of the device (check logs to see the uuid of the device)
  */
 function _getCurrentConsumption(attributeValue, name, deviceId) {
   Logger.log("==> _getCurrentConsumption ***");
   
   // Apply a filter on CURRENT_CONSUMPTION              
   if (attributeValue['definition']['name'] == "CURRENT_CONSUMPTION") {
-    CollectValuesForFeeds(deviceId, name, attributeValue['value']);
+    CollectValuesForFeeds("meters", deviceId, name, attributeValue['value']);
+  }
+}
+
+
+/**
+ * Get the cumulative consumption
+ * @param attributeValue : attribute in JSON returned by the zipabox
+ * @param name : name of the device
+ * @param deviceId : uuid of the device (check logs to see the uuid of the device)
+ */
+function _getCumulativeConsumption(attributeValue, name, deviceId) {
+  Logger.log("==> _getCurrentConsumption ***");
+  
+  // Apply a filter on CUMULATIVE_CONSUMPTION              
+  if (attributeValue['definition']['name'] == "CUMULATIVE_CONSUMPTION") {
+    CollectValuesForFeeds("meters", deviceId, name, attributeValue['value']);
   }
 }
 
@@ -153,14 +170,14 @@ function _getCurrentConsumption(attributeValue, name, deviceId) {
  * Get the sensor state
  * @param attributeValue : attribute in JSON returned by the zipabox
  * @param name : name of the device
- * @param deviceId : uuid endpoint of the device
+ * @param deviceId : uuid of the device (check logs to see the uuid of the device)
  */
 function _getSensorState(attributeValue, name, deviceId) {
   Logger.log("==> _getSensorState ***");
   
   // Get the semantic of the true/false value
   var value = attributeValue['definition']['enumValues'][attributeValue['value']];   
-  CollectValuesForFeeds(deviceId, name, value);
+  CollectValuesForFeeds("sensors", deviceId, name, value);
  
   Logger.log("*** _getSensorState <==");
 }
@@ -260,16 +277,17 @@ function sendToSense() {
 
 
 /**
- * Preparing all data before sending to sense
+ * Preparing lights data before sending to sense
+ * TODO: everything
  */
-function processAll() {
-  writelog("*** processAll ***");
+function processLights() {
+  writelog("*** processLights ***");
   
   
   /****************************
    * ### FUNCTION MAIN PART ###
    ****************************/
-  
+  /*
   // Reinit feeds
   opensense.emptyFeeds();
   
@@ -300,7 +318,7 @@ function processAll() {
         CollectValuesForFeeds(endpoint,name,value);
       }
     }	
-  }
+  }*/
 }
   
 
@@ -315,7 +333,7 @@ function processSensors() {
    ****************************/
   
   // Reinit feeds
-  opensense.emptyFeeds();
+  //opensense.emptyFeeds();
   
   // Retrieve data from Zipabox
   if(!zipabox.connected)
@@ -337,13 +355,13 @@ function processSensors() {
     var name = devicejson.name;
     var endpoint = devicejson.endpoint;
     
-    //writelog("Device["+uuid+"]: "+JSON.stringify(devicejson));
+    writelog("Device["+uuid+"]: "+JSON.stringify(devicejson));
     
     for (var attr in devicejson.attributes) {
       var attribute = devicejson.attributes[attr];
       
       _getSensorState(attribute, name, uuid);
-      //writelog("Attribute["+attr+"]: "+JSON.stringify(attribute));
+      writelog("Attribute["+attr+"]: "+JSON.stringify(attribute));
     }
   }
 }
@@ -366,7 +384,11 @@ function processMeters(typeToProcess) {
    ****************************/
   
   // Reinit feeds
-  opensense.emptyFeeds();
+  //opensense.emptyFeeds();
+  
+  // Check function argument
+  if (typeof typeToProcess != "string")
+    typeToProcess = "ALL";
   
   // Retrieve data from Zipabox
   if(!zipabox.connected)
@@ -409,11 +431,16 @@ function processMeters(typeToProcess) {
           _getCurrentConsumption(attribute, name, uuid);
           break;
           
+        case "CUMULATIVE_CONSUMPTION":
+          _getCumulativeConsumption(attribute, name, uuid);
+          break;
+          
         case "ALL":
           _getTemperature(attribute, name, uuid);
           _getHumidity(attribute, name, uuid);
           _getLuminance(attribute, name, uuid);
           _getCurrentConsumption(attribute, name, uuid);
+          _getCumulativeConsumption(attribute, name, uuid);
           break;          
       } // end switch      
     } // end attributes
@@ -425,6 +452,7 @@ function processMeters(typeToProcess) {
  * Custom function for periodical execution by google script
  */
 function main(){
-  processAll();
+  processMeters("ALL");
+  processSensors();
   sendToSense();
 }
