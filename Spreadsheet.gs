@@ -125,12 +125,12 @@ function _insertRecord(name, value) {
 
 /**
  * Get the feedId from the params sheet
- * @param typeDevice : type of the device
+ * @param typeDevice : type of the device (meters, sensors, lights...)
  * @param deviceName : the device name, not used at this time
  * @param deviceId : the deviceId from the zipabox
  * @return the feedID matching the device, return 0 if not found
  */
-function getFeedID(typeDevice,deviceName,deviceID) {
+function getFeedID(typeDevice, deviceName, deviceID) {
   writelog("==> getFeedID ***");
   writelog("checking for typeDevice["+typeDevice+"] / deviceName["+deviceName+"] / deviceID["+deviceID+"]");
   
@@ -151,12 +151,19 @@ function getFeedID(typeDevice,deviceName,deviceID) {
     if(!listDevices[i][3]) return 0;
     
     // get the sense feedID of the device
-    if(listDevices[i][1] == deviceID || listDevices[i][0] == deviceName) {
+    // check for name first then check for deviceID
+    if(listDevices[i][0] == deviceName) {
+      feedID = listDevices[i][2];
+      writelog("FeedID found = "+feedID+" for device ["+deviceName+"]");
+      break;
+    } else if (listDevices[i][1] == deviceID) {
       feedID = listDevices[i][2];
       writelog("FeedID found = "+feedID+" for device ["+deviceName+"]");
       break;
     }
   }
+  
+  if(parseInt(feedID) == 0) writelog("No feedID found");
   
   return parseInt(feedID);
 }
