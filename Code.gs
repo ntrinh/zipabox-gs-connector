@@ -177,8 +177,8 @@ function _getSensorState(attributeValue, name, deviceId) {
   
   var value = attributeValue['value'];
   
-  // Get the semantic of the true/false value
-  if(typeof attributeValue['definition']['enumValues'] != "undefined") {
+  // Get the semantic of the true/false value  
+  if((typeof attributeValue['definition'] != "undefined") && (typeof attributeValue['definition']['enumValues'] != "undefined")) {
     value = attributeValue['definition']['enumValues'][attributeValue['value']];   
   }
   
