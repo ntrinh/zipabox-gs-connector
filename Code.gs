@@ -175,8 +175,13 @@ function _getCumulativeConsumption(attributeValue, name, deviceId) {
 function _getSensorState(attributeValue, name, deviceId) {
   Logger.log("==> _getSensorState ***");
   
+  var value = attributeValue['value'];
+  
   // Get the semantic of the true/false value
-  var value = attributeValue['definition']['enumValues'][attributeValue['value']];   
+  if(typeof attributeValue['definition']['enumValues'] != "undefined") {
+    value = attributeValue['definition']['enumValues'][attributeValue['value']];   
+  }
+  
   CollectValuesForFeeds("sensors", deviceId, name, value);
  
   Logger.log("*** _getSensorState <==");
