@@ -95,7 +95,7 @@ function CollectValuesForFeeds(deviceType, uuid, deviceName, value){
 function _getTemperature(attributeValue, name, deviceId) {
   writelog("==> _getTemperature ***");
   
-  var type = "TEMPERATURE";
+  var type = "TEMP";
   
   // Apply a filter on TEMPERATURE                
   if (attributeValue['definition']['name'] == "TEMPERATURE" || attributeValue['definition']['name'] == "TEMPERATURE_IN_ROOM") {
@@ -112,12 +112,13 @@ function _getTemperature(attributeValue, name, deviceId) {
     var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();    
     if (!spreadSheet.getSheetByName(sheetName)) {
       spreadSheet.insertSheet(sheetName);
+      spreadSheet.getSheetByName(sheetName).appendRow(["Temperature"]);
       spreadSheet.getSheetByName(sheetName).appendRow(["Timestamp", "Value"]);
-      spreadSheet.getSheetByName(sheetName).getRange("A1:B1").setBackground("purple");
-      spreadSheet.getSheetByName(sheetName).getRange("A1:B1").setFontColor("white");
+      spreadSheet.getSheetByName(sheetName).getRange("A2:B2").setBackground("purple");
+      spreadSheet.getSheetByName(sheetName).getRange("A2:B2").setFontColor("white");
     }
     
-    var value = parseFloat(attributeValue['value']); // French format with 2 decimals
+    var value = parseFloat(attributeValue['value']); 
     writelog("Insert values in spreadsheet for device ["+name+"] / Value: "+value);
     _insertRecord(sheetName, value);
   }
@@ -133,7 +134,7 @@ function _getTemperature(attributeValue, name, deviceId) {
 function _getHumidity(attributeValue, name, deviceId) {
   Logger.log("==> _getHumidity ***");
   
-  var type = "HUMIDITY";
+  var type = "HUM";
   
   // Apply a filter on HUMIDITY               
   if (attributeValue['definition']['name'] == "HUMIDITY") {
@@ -150,12 +151,13 @@ function _getHumidity(attributeValue, name, deviceId) {
     var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();    
     if (!spreadSheet.getSheetByName(sheetName)) {
       spreadSheet.insertSheet(sheetName);
+      spreadSheet.getSheetByName(sheetName).appendRow(["Humidity"]);
       spreadSheet.getSheetByName(sheetName).appendRow(["Timestamp", "Value"]);
-      spreadSheet.getSheetByName(sheetName).getRange("A1:B1").setBackground("purple");
-      spreadSheet.getSheetByName(sheetName).getRange("A1:B1").setFontColor("white");
+      spreadSheet.getSheetByName(sheetName).getRange("A2:B2").setBackground("purple");
+      spreadSheet.getSheetByName(sheetName).getRange("A2:B2").setFontColor("white");
     }
     
-    var value = parseFloat(attributeValue['value']); // French format with 2 decimals
+    var value = parseFloat(attributeValue['value']); 
     writelog("Insert values in spreadsheet for device ["+name+"] / Value: "+value);
     _insertRecord(sheetName, value);
   }
@@ -171,7 +173,7 @@ function _getHumidity(attributeValue, name, deviceId) {
 function _getLuminance(attributeValue, name, deviceId) {
   Logger.log("==> _getLuminance ***");
   
-  var type = "LUMINANCE";
+  var type = "LUM";
   
   // Apply a filter on LUMINANCE              
   if (attributeValue['definition']['name'] == "LUMINANCE") {
@@ -188,12 +190,13 @@ function _getLuminance(attributeValue, name, deviceId) {
     var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();    
     if (!spreadSheet.getSheetByName(sheetName)) {
       spreadSheet.insertSheet(sheetName);
+      spreadSheet.getSheetByName(sheetName).appendRow(["Luminance"]);
       spreadSheet.getSheetByName(sheetName).appendRow(["Timestamp", "Value"]);
-      spreadSheet.getSheetByName(sheetName).getRange("A1:B1").setBackground("purple");
-      spreadSheet.getSheetByName(sheetName).getRange("A1:B1").setFontColor("white");
+      spreadSheet.getSheetByName(sheetName).getRange("A2:B2").setBackground("purple");
+      spreadSheet.getSheetByName(sheetName).getRange("A2:B2").setFontColor("white");
     }
     
-    var value = parseFloat(attributeValue['value']); // French format with 2 decimals
+    var value = parseFloat(attributeValue['value']);
     writelog("Insert values in spreadsheet for device ["+name+"] / Value: "+value);
     _insertRecord(sheetName, value);
   }    
@@ -226,9 +229,10 @@ function _getCurrentConsumption(attributeValue, name, deviceId) {
     var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();    
     if (!spreadSheet.getSheetByName(sheetName)) {
       spreadSheet.insertSheet(sheetName);
+      spreadSheet.getSheetByName(sheetName).appendRow(["Current Consumption"]);
       spreadSheet.getSheetByName(sheetName).appendRow(["Timestamp", "Value"]);
-      spreadSheet.getSheetByName(sheetName).getRange("A1:B1").setBackground("purple");
-      spreadSheet.getSheetByName(sheetName).getRange("A1:B1").setFontColor("white");
+      spreadSheet.getSheetByName(sheetName).getRange("A2:B2").setBackground("purple");
+      spreadSheet.getSheetByName(sheetName).getRange("A2:B2").setFontColor("white");
     }
     
     var value = parseFloat(attributeValue['value']); // French format with 2 decimals
@@ -247,7 +251,7 @@ function _getCurrentConsumption(attributeValue, name, deviceId) {
 function _getCumulativeConsumption(attributeValue, name, deviceId) {
   Logger.log("==> _getCumulativeConsumption ***");
   
-  var type = "CUMULATIVE_CONSUMPTION";
+  var type = "CUMCONS";
   
   // Apply a filter on CUMULATIVE_CONSUMPTION              
   if (attributeValue['definition']['name'] == "CUMULATIVE_CONSUMPTION") {
@@ -264,9 +268,10 @@ function _getCumulativeConsumption(attributeValue, name, deviceId) {
     var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();    
     if (!spreadSheet.getSheetByName(sheetName)) {
       spreadSheet.insertSheet(sheetName);
+      spreadSheet.getSheetByName(sheetName).appendRow(["Cumulative Consumption"]);
       spreadSheet.getSheetByName(sheetName).appendRow(["Timestamp", "Value"]);
-      spreadSheet.getSheetByName(sheetName).getRange("A1:B1").setBackground("purple");
-      spreadSheet.getSheetByName(sheetName).getRange("A1:B1").setFontColor("white");
+      spreadSheet.getSheetByName(sheetName).getRange("A2:B2").setBackground("purple");
+      spreadSheet.getSheetByName(sheetName).getRange("A2:B2").setFontColor("white");
     }
     
     var value = parseFloat(attributeValue['value']); // French format with 2 decimals
