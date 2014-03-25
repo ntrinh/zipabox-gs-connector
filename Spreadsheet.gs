@@ -142,23 +142,30 @@ function getFeedID(typeDevice, deviceName, deviceID) {
   
   var listDevices = range.getValues();
   
-  for(var i=1; i<listDevices.length; i++) {
-    // check if device should be send to sense
-    if(!listDevices[i][3]) {
-      //writelog(listDevices[i][0]+"-"+listDevices[i][1]+"-"+listDevices[i][2]+"-"+listDevices[i][3]);
-      writelog("Device set to FALSE => Not sending");
-      return 0;
-    }
-    
+  for(var i=1; i<listDevices.length; i++) {    
     // get the sense feedID of the device
     // check for name first then check for deviceID
     if(listDevices[i][0] == deviceName) {
       feedID = listDevices[i][2];
       writelog("FeedID found = "+feedID+" for device ["+deviceName+"]");
+      
+      // check if device should be send to sense
+      if(!listDevices[i][3]) {
+        writelog("Device set to FALSE => Not sending");
+        feedID = 0;
+      }
+      
       break;
     } else if (listDevices[i][1] == deviceID) {
       feedID = listDevices[i][2];
       writelog("FeedID found = "+feedID+" for device ["+deviceName+"]");
+      
+      // check if device should be send to sense
+      if(!listDevices[i][3]) {
+        writelog("Device set to FALSE => Not sending");
+        feedID = 0;
+      }
+      
       break;
     }
   }
