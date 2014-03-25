@@ -114,7 +114,10 @@ function _insertRecord(name, value) {
   var sheet = spreadSheet.getSheetByName(name);
   var lastRow = sheet.getLastRow();
   var activeRange = sheet.getRange(lastRow+1, 1, lastRow+2, 2);
+  var dateFormat = (typeof zipabox.dateFormat != "undefined") ? zipabox.dateFormat : "dd/MM/yyyy HH:mm:ss";
+  
   activeRange.getCell(1, 1).setValue(new Date());
+  activeRange.getCell(1, 1).setNumberFormat(dateFormat);
   activeRange.getCell(1, 2).setValue(value);
 }
 
