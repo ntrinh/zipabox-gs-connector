@@ -95,9 +95,31 @@ function CollectValuesForFeeds(deviceType, uuid, deviceName, value){
 function _getTemperature(attributeValue, name, deviceId) {
   writelog("==> _getTemperature ***");
   
+  var type = "TEMPERATURE";
+  
   // Apply a filter on TEMPERATURE                
   if (attributeValue['definition']['name'] == "TEMPERATURE" || attributeValue['definition']['name'] == "TEMPERATURE_IN_ROOM") {
     CollectValuesForFeeds("meters", deviceId, name, attributeValue['value']);
+    
+    var sheetName = name+" - "+type;
+    if(sheetName.length > 50) {
+      var sup = sheetName.length-50;
+      var short = name.length-sup-3;
+      sheetName = name.substr(0, short)+"... - "+type;
+    }
+    
+    // Insert a record in the spreadsheet
+    var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();    
+    if (!spreadSheet.getSheetByName(sheetName)) {
+      spreadSheet.insertSheet(sheetName);
+      spreadSheet.getSheetByName(sheetName).appendRow(["Timestamp", "Value"]);
+      spreadSheet.getSheetByName(sheetName).getRange("A1:B1").setBackground("purple");
+      spreadSheet.getSheetByName(sheetName).getRange("A1:B1").setFontColor("white");
+    }
+    
+    var value = parseFloat(attributeValue['value']); // French format with 2 decimals
+    writelog("Insert values in spreadsheet for device ["+name+"] / Value: "+value);
+    _insertRecord(sheetName, value);
   }
 }
 
@@ -111,9 +133,31 @@ function _getTemperature(attributeValue, name, deviceId) {
 function _getHumidity(attributeValue, name, deviceId) {
   Logger.log("==> _getHumidity ***");
   
+  var type = "HUMIDITY";
+  
   // Apply a filter on HUMIDITY               
   if (attributeValue['definition']['name'] == "HUMIDITY") {
     CollectValuesForFeeds("meters", deviceId, name, attributeValue['value']);
+    
+    var sheetName = name+" - "+type;
+    if(sheetName.length > 50) {
+      var sup = sheetName.length-50;
+      var short = name.length-sup-3;
+      sheetName = name.substr(0, short)+"... - "+type;
+    }
+    
+    // Insert a record in the spreadsheet
+    var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();    
+    if (!spreadSheet.getSheetByName(sheetName)) {
+      spreadSheet.insertSheet(sheetName);
+      spreadSheet.getSheetByName(sheetName).appendRow(["Timestamp", "Value"]);
+      spreadSheet.getSheetByName(sheetName).getRange("A1:B1").setBackground("purple");
+      spreadSheet.getSheetByName(sheetName).getRange("A1:B1").setFontColor("white");
+    }
+    
+    var value = parseFloat(attributeValue['value']); // French format with 2 decimals
+    writelog("Insert values in spreadsheet for device ["+name+"] / Value: "+value);
+    _insertRecord(sheetName, value);
   }
 }
 
@@ -127,10 +171,32 @@ function _getHumidity(attributeValue, name, deviceId) {
 function _getLuminance(attributeValue, name, deviceId) {
   Logger.log("==> _getLuminance ***");
   
+  var type = "LUMINANCE";
+  
   // Apply a filter on LUMINANCE              
   if (attributeValue['definition']['name'] == "LUMINANCE") {
     CollectValuesForFeeds("meters", deviceId, name, attributeValue['value']);
-  }
+    
+    var sheetName = name+" - "+type;
+    if(sheetName.length > 50) {
+      var sup = sheetName.length-50;
+      var short = name.length-sup-3;
+      sheetName = name.substr(0, short)+"... - "+type;
+    }
+    
+    // Insert a record in the spreadsheet
+    var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();    
+    if (!spreadSheet.getSheetByName(sheetName)) {
+      spreadSheet.insertSheet(sheetName);
+      spreadSheet.getSheetByName(sheetName).appendRow(["Timestamp", "Value"]);
+      spreadSheet.getSheetByName(sheetName).getRange("A1:B1").setBackground("purple");
+      spreadSheet.getSheetByName(sheetName).getRange("A1:B1").setFontColor("white");
+    }
+    
+    var value = parseFloat(attributeValue['value']); // French format with 2 decimals
+    writelog("Insert values in spreadsheet for device ["+name+"] / Value: "+value);
+    _insertRecord(sheetName, value);
+  }    
 }
 
 
@@ -141,12 +207,34 @@ function _getLuminance(attributeValue, name, deviceId) {
  * @param deviceId : uuid of the device (check logs to see the uuid of the device)
  */
 function _getCurrentConsumption(attributeValue, name, deviceId) {
-  Logger.log("==> _getCurrentConsumption ***");
+  writelog("==> _getCurrentConsumption ***");
+  
+  var type = "CCONS";
   
   // Apply a filter on CURRENT_CONSUMPTION              
   if (attributeValue['definition']['name'] == "CURRENT_CONSUMPTION") {
     CollectValuesForFeeds("meters", deviceId, name, attributeValue['value']);
-  }
+    
+   var sheetName = name+" - "+type;
+    if(sheetName.length > 50) {
+      var sup = sheetName.length-50;
+      var short = name.length-sup-3;
+      sheetName = name.substr(0, short)+"... - "+type;
+    }
+    
+    // Insert a record in the spreadsheet
+    var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();    
+    if (!spreadSheet.getSheetByName(sheetName)) {
+      spreadSheet.insertSheet(sheetName);
+      spreadSheet.getSheetByName(sheetName).appendRow(["Timestamp", "Value"]);
+      spreadSheet.getSheetByName(sheetName).getRange("A1:B1").setBackground("purple");
+      spreadSheet.getSheetByName(sheetName).getRange("A1:B1").setFontColor("white");
+    }
+    
+    var value = parseFloat(attributeValue['value']); // French format with 2 decimals
+    writelog("Insert values in spreadsheet for device ["+name+"] / Value: "+value);
+    _insertRecord(sheetName, value);
+  }    
 }
 
 
@@ -157,11 +245,33 @@ function _getCurrentConsumption(attributeValue, name, deviceId) {
  * @param deviceId : uuid of the device (check logs to see the uuid of the device)
  */
 function _getCumulativeConsumption(attributeValue, name, deviceId) {
-  Logger.log("==> _getCurrentConsumption ***");
+  Logger.log("==> _getCumulativeConsumption ***");
+  
+  var type = "CUMULATIVE_CONSUMPTION";
   
   // Apply a filter on CUMULATIVE_CONSUMPTION              
   if (attributeValue['definition']['name'] == "CUMULATIVE_CONSUMPTION") {
     CollectValuesForFeeds("meters", deviceId, name, attributeValue['value']);
+    
+    var sheetName = name+" - "+type;
+    if(sheetName.length > 50) {
+      var sup = sheetName.length-50;
+      var short = name.length-sup-3;
+      sheetName = name.substr(0, short)+"... - "+type;
+    }
+    
+    // Insert a record in the spreadsheet
+    var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();    
+    if (!spreadSheet.getSheetByName(sheetName)) {
+      spreadSheet.insertSheet(sheetName);
+      spreadSheet.getSheetByName(sheetName).appendRow(["Timestamp", "Value"]);
+      spreadSheet.getSheetByName(sheetName).getRange("A1:B1").setBackground("purple");
+      spreadSheet.getSheetByName(sheetName).getRange("A1:B1").setFontColor("white");
+    }
+    
+    var value = parseFloat(attributeValue['value']); // French format with 2 decimals
+    writelog("Insert values in spreadsheet for device ["+name+"] / Value: "+value);
+    _insertRecord(sheetName, value);
   }
 }
 
@@ -173,8 +283,9 @@ function _getCumulativeConsumption(attributeValue, name, deviceId) {
  * @param deviceId : uuid of the device (check logs to see the uuid of the device)
  */
 function _getSensorState(attributeValue, name, deviceId) {
-  Logger.log("==> _getSensorState ***");
+  writelog("==> _getSensorState ***");
   
+  var type = "SENSOR";
   var value = attributeValue['value'];
   
   // Get the semantic of the true/false value  
@@ -183,8 +294,27 @@ function _getSensorState(attributeValue, name, deviceId) {
   }
   
   CollectValuesForFeeds("sensors", deviceId, name, value);
+  
+  var sheetName = name+" - "+type;
+  if(sheetName.length > 50) {
+    var sup = sheetName.length-50;
+    var short = name.length-sup-3;
+    sheetName = name.substr(0, short)+"... - "+type;
+  }
+  
+  // Insert a record in the spreadsheet
+  var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();    
+  if (!spreadSheet.getSheetByName(sheetName)) {
+    spreadSheet.insertSheet(sheetName);
+    spreadSheet.getSheetByName(sheetName).appendRow(["Timestamp", "Value"]);
+    spreadSheet.getSheetByName(sheetName).getRange("A1:B1").setBackground("purple");
+    spreadSheet.getSheetByName(sheetName).getRange("A1:B1").setFontColor("white");
+  }
+    
+  writelog("Insert values in spreadsheet for device ["+name+"] / Value: "+value);
+  _insertRecord(sheetName, value); 
  
-  Logger.log("*** _getSensorState <==");
+  writelog("*** _getSensorState <==");
 }
 
 
@@ -254,6 +384,7 @@ function sendToSense() {
     writelog("Sending Feed : " + (""+JSON.stringify(feed)));
         
     // Insert a record in the spreadsheet
+    /*
     var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();
     if (!spreadSheet.getSheetByName(feed.deviceName)) {
       spreadSheet.insertSheet(feed.deviceName);
@@ -262,6 +393,7 @@ function sendToSense() {
     writelog("Insert values in spreadsheet for device ["+feed.deviceName+"]");
     var valueFR = feed.value.replace(".", ","); // French format with 2 decimals
     _insertRecord(feed.deviceName, valueFR);
+    */
   };
   
   opensense.events.OnAfterSendFeed = function(feed){
@@ -413,9 +545,13 @@ function processMeters(typeToProcess) {
   for (var uuid in deviceMeters.json) {
     var devicejson = deviceMeters.json[uuid];
     
+    writelog("Device["+uuid+"]: "+JSON.stringify(devicejson));
+    
     for (var attr in devicejson.attributes) {
       var attribute = devicejson.attributes[attr];
       var name = devicejson.name;
+      
+      writelog("Attribute["+attr+"]: "+JSON.stringify(attribute));
       
       //switch on typetoprocess     
       switch(typeToProcess) {
