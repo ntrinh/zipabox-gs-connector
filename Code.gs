@@ -54,6 +54,9 @@ function _initLogin() {
       case 'url':
         zipabox.url = zipaboxSection[i][1];        
         break;
+        
+      case 'dateFormat':
+        zipabox.dateFormat = zipaboxSection[i][1];
     }
   }
 }
