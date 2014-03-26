@@ -170,11 +170,11 @@ function getFeedID(typeDevice, deviceName, deviceID, attributeName) {
   for(var i=1; i<listDevices.length; i++) {    
     // get the sense feedID of the device
     if (listDevices[i][1] == deviceID && listDevices[i][2] == attributeName) {
-      feedID = listDevices[i][2];
+      feedID = listDevices[i][3];
       writelog("FeedID found = "+feedID+" for device ["+deviceName+"]");
       
       // check if device should be send to sense
-      if(!listDevices[i][3]) {
+      if(!listDevices[i][4]) {
         writelog("Device set to FALSE => Not sending");
         feedID = 0;
       }
