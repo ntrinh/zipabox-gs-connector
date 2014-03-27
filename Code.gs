@@ -27,7 +27,7 @@ function _initLogin() {
   var range = getPropertiesRangeByName("ZIPABOX");
   var search = range.getValues();    
   
-  Logger.clear();
+  //Logger.clear();
   
   // Convert plain text password in the spreadsheet to SHA1 digest
   for (i=0; i<search.length; i++) {
@@ -109,7 +109,7 @@ function CollectValuesForFeeds(deviceType, uuid, deviceName, attribute, forcedVa
  * @param deviceId : uuid of the device (check logs to see the uuid of the device)
  */
 function _getTemperature(attributeValue, name, deviceId) {
-  writelog("==> _getTemperature ***");
+  Logger.log("==> _getTemperature ***");
   
   var type = "TEMP";
   
@@ -216,7 +216,7 @@ function _getLuminance(attributeValue, name, deviceId) {
  * @param deviceId : uuid of the device (check logs to see the uuid of the device)
  */
 function _getCurrentConsumption(attributeValue, name, deviceId) {
-  writelog("==> _getCurrentConsumption ***");
+  Logger.log("==> _getCurrentConsumption ***");
   
   var type = "CCONS";
   
@@ -471,7 +471,7 @@ function processLights() {
  * - Insert value in sheet
  */
 function processSensors() {
-  Logger.log("*** processSensors ***");
+  writelog("*** processSensors ***");
   
   /****************************
    * ### FUNCTION MAIN PART ###
@@ -485,7 +485,7 @@ function processSensors() {
   var deviceMeters = getPropertiesRangeByName("sensors");  
   var search = deviceMeters.getValues();
     
-  for (i=2; i<search.length; i++) {
+  for (var i=2; i<search.length; i++) {
     var endointUUID = search[i][1];
     var devicejson = zipabox.GetDeviceByEndpointUUID(endointUUID);    
     
@@ -513,12 +513,12 @@ function processSensors() {
  * - CURRENT_CONSUMPTION for current consumption only
  * - ALL for all of above
  */
-function processMeters(typeToProcess) {
+function processMeters(typeToProcess) {  
   writelog("*** processMeters ***");
   
   /****************************
    * ### FUNCTION MAIN PART ###
-   ****************************/
+   ****************************/  
   
   // Check function argument
   if (typeof typeToProcess != "string")
@@ -532,7 +532,7 @@ function processMeters(typeToProcess) {
   var deviceMeters = getPropertiesRangeByName("meters");  
   var search = deviceMeters.getValues();
     
-  for (i=2; i<search.length; i++) {
+  for (var i=2; i<search.length; i++) {
     var endointUUID = search[i][1];
     var devicejson = zipabox.GetDeviceByEndpointUUID(endointUUID);
     
@@ -545,9 +545,11 @@ function processMeters(typeToProcess) {
       var attribute = devicejson.attributes[attr];
       var attributeName = (typeof attribute.definition != "undefined") ? attribute.definition.name : attribute.name;
       
-      if(attributeName == search[i][2])
-        attribute.canCreateSheet = search[i][5];
+      if(attributeName != search[i][2]) break;
       
+      attribute.canCreateSheet = search[i][5];
+      
+      writelog("Search: "+search.join("/"));
       writelog("Attribute["+attr+"]: "+JSON.stringify(attribute));
     
       //switch on typetoprocess     
@@ -776,6 +778,7 @@ function _canCreateSheetForDeviceUUID(uuid, tabName) {
  * Custom function for periodical execution by google script
  */
 function main(){
+  //Logger.clear();
   processMeters("ALL");
   processSensors();
   processLights();
