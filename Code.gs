@@ -592,9 +592,7 @@ function processMeters(typeToProcess) {
  * Initialize the param sheet with devices
  */
 function initParamSheet() {
-  // Prevents multiple launches
-  if(zipabox.isRunning) return;
-  zipabox.isRunning = true;
+  writelog("*** initParamSheet ***");
   
   var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();
   var paramName = CacheService.getPrivateCache().get("paramSheet");
@@ -745,7 +743,6 @@ function initParamSheet() {
     }
   }
   
-  zipabox.isRunning = false;
 }
 
 
