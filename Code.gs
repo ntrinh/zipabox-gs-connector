@@ -78,7 +78,7 @@ function _initLogin() {
  */
 function CollectValuesForFeeds(deviceType, uuid, deviceName, attribute, forcedValue){
   var value = attribute.value;
-  var attributeName = attribute.name;
+  var attributeName = (typeof attribute.definition != "undefined") ? attribute.definition.name : attribute.name;
   var feedID = getFeedID(deviceType, deviceName, uuid, attributeName);  
   
   if (feedID != 0){
@@ -321,6 +321,45 @@ function _getSensorState(attributeValue, name, deviceId) {
 
 
 /**
+ * Get the light state
+ * @param {Object} attributeValue : attribute in JSON returned by the zipabox
+ * @param {String} name : name of the device
+ * @param {String} deviceId : uuid of the device (check logs to see the uuid of the device)
+ */
+function _getLightState(attributeValue, name, deviceId) {
+  writelog("==> _getLightState ***");
+  
+  var type = "LIGHT";
+  var value = attributeValue['value'];
+  
+  // Get the semantic of the sensor value  
+  if((typeof attributeValue['definition'] != "undefined") && (typeof attributeValue['definition']['enumValues'] != "undefined")) {
+    value = attributeValue['definition']['enumValues'][attributeValue['value']];
+  }
+  
+  CollectValuesForFeeds("lights", deviceId, name, attributeValue, value);  
+  
+  // Insert a record in the spreadsheet
+  if(attributeValue.canCreateSheet) {
+    var sheetName = createSheetName(name, type);
+    var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();
+    
+    if (!spreadSheet.getSheetByName(sheetName)) {
+      spreadSheet.insertSheet(sheetName);
+      spreadSheet.getSheetByName(sheetName).appendRow(["Timestamp", "Value"]);
+      spreadSheet.getSheetByName(sheetName).getRange("A1:B1").setBackground("purple");
+      spreadSheet.getSheetByName(sheetName).getRange("A1:B1").setFontColor("white");
+    }
+    
+    writelog("Insert values in spreadsheet for device ["+name+"] / Value: "+value);
+    _insertRecord(sheetName, value); 
+  }
+ 
+  writelog("*** _getLightState <==");
+}
+
+
+/**
  * Collect all data from Zipabox
  * Data are stored in zipabox.devices
  */
@@ -388,18 +427,6 @@ function sendToSense() {
   // Callback event: Insert a record in spreadsheet before sending feed
   opensense.events.OnBeforeSendFeed = function(feed){
     writelog("Sending Feed : " + (""+JSON.stringify(feed)));
-        
-    // Insert a record in the spreadsheet
-    /*
-    var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();
-    if (!spreadSheet.getSheetByName(feed.deviceName)) {
-      spreadSheet.insertSheet(feed.deviceName);
-    }
-    
-    writelog("Insert values in spreadsheet for device ["+feed.deviceName+"]");
-    var valueFR = feed.value.replace(".", ","); // French format with 2 decimals
-    _insertRecord(feed.deviceName, valueFR);
-    */
   };
   
   opensense.events.OnAfterSendFeed = function(feed){
@@ -425,43 +452,41 @@ function sendToSense() {
  */
 function processLights() {
   writelog("*** processLights ***");
-  
-  
+ 
   /****************************
    * ### FUNCTION MAIN PART ###
    ****************************/
-  /*
-  // Reinit feeds
-  opensense.emptyFeeds();
+  
+  SpreadsheetApp.getActiveSpreadsheet().toast('Processing lights data from Zipabox', 'Status', 5);
   
   // Retrieve data from Zipabox
   if(!zipabox.connected)
-    collectDataFromZipabox();    
+    collectDataFromZipabox();
+  
+  // Get sensors devices in spreadsheet
+  var deviceMeters = getPropertiesRangeByName("lights");  
+  var search = deviceMeters.getValues();
     
-  // Collecting feeds for all devices
-  for (var iddevice in zipabox.devices) {
-    var device = zipabox.devices[iddevice];    
+  for (var i=2; i<search.length; i++) {
+    var endointUUID = search[i][1];
+    var devicejson = zipabox.GetDeviceByEndpointUUID(endointUUID);    
     
-    for (var uuid in device.json){				
-      var devicejson = device.json[uuid];
-      var name = devicejson.name;
-      var endpoint = devicejson.endpoint;
+    if(!devicejson) break;        
+    
+    var name = devicejson.name;
+    SpreadsheetApp.getActiveSpreadsheet().toast('Getting data for device: '+name, 'Status', 5);
+    
+    writelog("Device["+endointUUID+"]: "+JSON.stringify(devicejson));
+    
+    for (var attr in devicejson.attributes) {
+      var attribute = devicejson.attributes[attr];      
       
-      for (var attr in devicejson.attributes){				
-        var attribute = devicejson.attributes[attr];
-        var value = attribute.value;
-        
-        //writelog("Attribute["+attr+"]: "+JSON.stringify(attribute));
-        
-        // Processing enum values
-        if(attribute.definition && attribute.definition.type && attribute.definition.type == "Enum"){
-          value = attribute.definition.enumValues[attribute.value];
-        }
-        
-        CollectValuesForFeeds(endpoint,name,value);
-      }
-    }	
-  }*/
+      attribute.canCreateSheet = search[i][5];
+      _getLightState(attribute, name, endointUUID);
+      writelog("Attribute["+attr+"]: "+JSON.stringify(attribute));
+    }
+  }
+ 
 }
   
 
@@ -477,11 +502,13 @@ function processSensors() {
    * ### FUNCTION MAIN PART ###
    ****************************/
   
+  SpreadsheetApp.getActiveSpreadsheet().toast('Processing sensors data from Zipabox', 'Status', 5);
+  
   // Retrieve data from Zipabox
   if(!zipabox.connected)
     collectDataFromZipabox();
   
-  // Get meters devices in spreadsheet
+  // Get sensors devices in spreadsheet
   var deviceMeters = getPropertiesRangeByName("sensors");  
   var search = deviceMeters.getValues();
     
@@ -489,18 +516,20 @@ function processSensors() {
     var endointUUID = search[i][1];
     var devicejson = zipabox.GetDeviceByEndpointUUID(endointUUID);    
     
-    if(!devicejson) break;
+    if(!devicejson) break;        
     
     var name = devicejson.name;
+    SpreadsheetApp.getActiveSpreadsheet().toast('Getting data for device: '+name, 'Status', 5);
     
     writelog("Device["+endointUUID+"]: "+JSON.stringify(devicejson));
     
     for (var attr in devicejson.attributes) {
       var attribute = devicejson.attributes[attr];      
       
+      attribute.canCreateSheet = search[i][5];
       _getSensorState(attribute, name, endointUUID);
       writelog("Attribute["+attr+"]: "+JSON.stringify(attribute));
-    }     
+    }
   }
 }
   
@@ -524,6 +553,8 @@ function processMeters(typeToProcess) {
   if (typeof typeToProcess != "string")
     typeToProcess = "ALL";
   
+  SpreadsheetApp.getActiveSpreadsheet().toast('Processing '+typeToProcess+' meters data from Zipabox', 'Status', 5);
+  
   // Retrieve data from Zipabox
   if(!zipabox.connected)
     collectDataFromZipabox();
@@ -539,6 +570,7 @@ function processMeters(typeToProcess) {
     if(!devicejson) break;
     
     var name = devicejson.name;
+    SpreadsheetApp.getActiveSpreadsheet().toast('Getting data for device: '+name, 'Status', 5);
     writelog("Device["+endointUUID+"]: "+JSON.stringify(devicejson));
     
     for (var attr in devicejson.attributes) {
@@ -600,182 +632,126 @@ function initParamSheet() {
   var columnsDevice = ["Name", "UUID Endpoint", "Attribute", "Feed ID", "Send to Sense", "Generate sheet"];
   var rule = SpreadsheetApp.newDataValidation().requireValueInList(["FALSE", "TRUE"], true).build();
   
+  /*********************
+   * ### Saving data ###
+   **********************/  
+  
+  var saveData = function(typeDevice) {
+    var db = ScriptDb.getMyDb();
+    
+    var deviceMeters = getPropertiesRangeByName(typeDevice);  
+    var search = deviceMeters ? deviceMeters.getValues() : [];
+    
+    for (var i=2; i<search.length; i++) {
+      var name = search[i][0];
+      var endointUUID = search[i][1];
+      var attributeName = search[i][2];
+      var feedID = search[i][3];
+      var canSendFeed = search[i][4];
+      var canCreateSheet = search[i][5];
+      
+      var item = db.save({
+        type: typeDevice,
+        name: name,
+        endpoint: endointUUID,
+        attribute: attributeName,
+        feedID: feedID,
+        canSendFeed: canSendFeed,
+        canCreateSheet: canCreateSheet
+      });
+    }
+  }
+  
+  SpreadsheetApp.getActiveSpreadsheet().toast('Saving data', 'Status', 5);
+  
+  saveData('meters');
+  saveData('sensors');
+  saveData('lights');    
+  
   // Clear data
-  sheet.getRange("A13:F900").clear();
+  sheet.getRange("A13:G900").clear();
   
-  /***************************
-   * ### Processing Meters ###
-   ***************************/  
+  /*********************************************************
+   * ### Processing data from Zipabox in the spreadsheet ###
+   *********************************************************/  
   
-  var lastRow = sheet.getLastRow()+2;
-  var activeRange = sheet.getRange(lastRow, 1, 1, columnsDevice.length);
-  
-  activeRange.getCell(1, 1).setValue("meters");
-  sheet.getRange(lastRow++, 1, 1, columnsDevice.length).setFontColor("white").setBackground("#003366");
-  sheet.appendRow(columnsDevice);
-  sheet.getRange(lastRow++, 1, 1, columnsDevice.length).setFontColor("white").setBackground("#004C99");
-  
-  // Retrieve data from Zipabox
-  if(!zipabox.connected)
-    collectDataFromZipabox();
-  
-  // Get only meters devices
-  var deviceMeters = null;    
-  for (var iddevice in zipabox.devices) {
-    var device = zipabox.devices[iddevice];    
+  var processData = function(typeDevice) {
+    var db = ScriptDb.getMyDb();
+    var lastRow = sheet.getLastRow()+2;
+    var activeRange = sheet.getRange(lastRow, 1, 1, columnsDevice.length);
     
-    if(device.name == "meters"){ 
-      deviceMeters = device;    
-      break;
-    }
-  }   
+    activeRange.getCell(1, 1).setValue(typeDevice);
+    sheet.getRange(lastRow++, 1, 1, columnsDevice.length).setFontColor("white").setBackground("#003366");
+    sheet.appendRow(columnsDevice);
+    sheet.getRange(lastRow++, 1, 1, columnsDevice.length).setFontColor("white").setBackground("#004C99");
     
-  for (var uuid in deviceMeters.json) {
-    var devicejson = deviceMeters.json[uuid];
-    var name = devicejson.name;      
-    var endpoint = devicejson.endpoint;
+    // Retrieve data from Zipabox
+    if(!zipabox.connected)
+      collectDataFromZipabox();
     
-    writelog("Device["+uuid+"]: "+JSON.stringify(devicejson));
+    SpreadsheetApp.getActiveSpreadsheet().toast('Processing '+typeDevice, 'Status', 5);
     
-    for (var attr in devicejson.attributes) {
-      var attribute = devicejson.attributes[attr];      
-      var nameAttribute = (typeof attribute.definition != "undefined") ? attribute.definition.name : attribute.name;
+    // Get only meters devices
+    var deviceMeters = null;    
+    for (var iddevice in zipabox.devices) {
+      var device = zipabox.devices[iddevice];    
       
-      writelog("Attribute["+attr+"]: "+JSON.stringify(attribute));
-            
-      var result = sheet.appendRow([name, endpoint, nameAttribute, '', false, false]);
-      sheet.getRange(result.getLastRow(), 1, 1, 3).setBackground("#C9C7C5");      
-      result.getDataRange().getCell(result.getLastRow(), 5).setDataValidation(rule);
-      result.getDataRange().getCell(result.getLastRow(), 6).setDataValidation(rule);
-      /* named range doesn't work for now... (bug in google script ?) */
-      //spreadSheet.setNamedRange(devicejson.endpoint, sheet.getRange(result.getLastRow(), 1, 1, sheet.getLastColumn()));
-    }
-  }
-  
-  
-  /****************************
-   * ### Processing Sensors ###
-   ****************************/  
-  
-  lastRow = sheet.getLastRow()+2;
-  activeRange = sheet.getRange(lastRow, 1, 1, columnsDevice.length);
+      if(device.name == typeDevice){ 
+        deviceMeters = device;    
+        break;
+      }
+    }   
     
-  activeRange.getCell(1, 1).setValue("sensors");
-  sheet.getRange(lastRow++, 1, 1, columnsDevice.length).setFontColor("white").setBackground("#003366");
-  sheet.appendRow(columnsDevice);
-  sheet.getRange(lastRow++, 1, 1, columnsDevice.length).setFontColor("white").setBackground("#004C99");
-  
-  // Get only sensors devices
-  var deviceMeters = null;    
-  for (var iddevice in zipabox.devices) {
-    var device = zipabox.devices[iddevice];    
-    
-    if(device.name == "sensors"){ 
-      deviceMeters = device;    
-      break;
-    }
-  }
-  
-  for (var uuid in deviceMeters.json) {
-    var devicejson = deviceMeters.json[uuid];
-    var name = devicejson.name;
-    var endpoint = devicejson.endpoint;
-    
-    writelog("Device["+uuid+"]: "+JSON.stringify(devicejson));    
-    
-    for (var attr in devicejson.attributes) {
-      var attribute = devicejson.attributes[attr];
-      var nameAttribute = (typeof attribute.definition != "undefined") ? attribute.definition.name : attribute.name;
+    for (var uuid in deviceMeters.json) {
+      var devicejson = deviceMeters.json[uuid];
+      var name = devicejson.name;      
+      var endpoint = devicejson.endpoint;
       
-      writelog("Attribute["+attr+"]: "+JSON.stringify(attribute));
-            
-      var result = sheet.appendRow([name, endpoint, nameAttribute, '', false, false]);
-      sheet.getRange(result.getLastRow(), 1, 1, 3).setBackground("#C9C7C5");
-      result.getDataRange().getCell(result.getLastRow(), 5).setDataValidation(rule);
-      result.getDataRange().getCell(result.getLastRow(), 6).setDataValidation(rule);  
-      /* named range doesn't work for now... (bug in google script ?) */
-      //spreadSheet.setNamedRange(devicejson.endpoint, sheet.getRange(result.getLastRow(), 1, 1, sheet.getLastColumn()));
-    }
-  }
-  
-  /****************************
-   * ### Processing Lights ###
-   ****************************/  
-  
-  lastRow = sheet.getLastRow()+2;
-  activeRange = sheet.getRange(lastRow, 1, 1, columnsDevice.length);
-    
-  activeRange.getCell(1, 1).setValue("lights");
-  sheet.getRange(lastRow++, 1, 1, columnsDevice.length).setFontColor("white").setBackground("#003366");
-  sheet.appendRow(columnsDevice);
-  sheet.getRange(lastRow++, 1, 1, columnsDevice.length).setFontColor("white").setBackground("#004C99");
-  
-  // Get only sensors devices
-  var deviceMeters = null;    
-  for (var iddevice in zipabox.devices) {
-    var device = zipabox.devices[iddevice];    
-    
-    if(device.name == "lights"){ 
-      deviceMeters = device;    
-      break;
-    }
-  }
-  
-  for (var uuid in deviceMeters.json) {
-    var devicejson = deviceMeters.json[uuid];
-    var name = devicejson.name;
-    var endpoint = devicejson.endpoint;
-    
-    writelog("Device["+uuid+"]: "+JSON.stringify(devicejson));    
-    
-    for (var attr in devicejson.attributes) {
-      var attribute = devicejson.attributes[attr];
-      var nameAttribute = (typeof attribute.definition != "undefined") ? attribute.definition.name : attribute.name;
+      writelog("Device["+uuid+"]: "+JSON.stringify(devicejson));
       
-      writelog("Attribute["+attr+"]: "+JSON.stringify(attribute));
-            
-      var result = sheet.appendRow([name, endpoint, nameAttribute, '', false, false]);
-      sheet.getRange(result.getLastRow(), 1, 1, 3).setBackground("#C9C7C5");
-      result.getDataRange().getCell(result.getLastRow(), 5).setDataValidation(rule);
-      result.getDataRange().getCell(result.getLastRow(), 6).setDataValidation(rule);  
-      /* named range doesn't work for now... (bug in google script ?) */
-      //spreadSheet.setNamedRange(devicejson.endpoint, sheet.getRange(result.getLastRow(), 1, 1, sheet.getLastColumn()));
-    }
-  }
+      for (var attr in devicejson.attributes) {
+        var attribute = devicejson.attributes[attr];      
+        var nameAttribute = (typeof attribute.definition != "undefined") ? attribute.definition.name : attribute.name;
+        
+        writelog("Attribute["+attr+"]: "+JSON.stringify(attribute));
+        
+        var result = sheet.appendRow([name, endpoint, nameAttribute, '', false, false]);
+        var tmpRange = result.getDataRange();
+        sheet.getRange(result.getLastRow(), 1, 1, 3).setBackground("#C9C7C5");      
+        tmpRange.getCell(result.getLastRow(), 5).setDataValidation(rule);
+        tmpRange.getCell(result.getLastRow(), 6).setDataValidation(rule);
+        
+        // Restore data        
+        var results = db.query({
+          type: typeDevice,
+          endpoint: endpoint,
+          attribute: nameAttribute
+        });
+        
+        while(results.hasNext()) {
+          var item = results.next();
+          tmpRange.getCell(result.getLastRow(), 4).setValue(item.feedID);
+          tmpRange.getCell(result.getLastRow(), 5).setValue(item.canSendFeed);
+          tmpRange.getCell(result.getLastRow(), 6).setValue(item.canCreateSheet);
+        }
+      } // end attributes
+    } // end devices  
+  } // end function
   
+  SpreadsheetApp.getActiveSpreadsheet().toast('Processing data from Zipabox', 'Status', 5);
+  
+  processData('meters');
+  processData('sensors');
+  processData('lights');
+  
+  SpreadsheetApp.getActiveSpreadsheet().toast('Initialization complete!', 'Status', 5);
 }
-
-
-/**
- * Check if a sheet can be created for the device
- * @param uuid : endpoint of the device
- * @param tabName : name of the params tab
- */
-/*
-function _canCreateSheetForDeviceUUID(uuid, tabName) {
-  writelog("*** _canCreateSheetForDeviceUUID ***");
-  
-  // Check if sheet should be created for the device
-  var range = getRowByUUID(uuid, tabName);
-  
-  if(range == -1) { 
-    writelog("No row found for device: "+uuid);
-    return false;
-  }
-  
-  if(range.getCell(1, 5).getValue()) return true;
-  
-  writelog("Creating sheet disabled for device: "+uuid);
-  return false;  
-}
-*/
 
 
 /**
  * Custom function for periodical execution by google script
  */
 function main(){
-  //Logger.clear();
   processMeters("ALL");
   processSensors();
   processLights();
