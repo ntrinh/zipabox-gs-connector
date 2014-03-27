@@ -111,16 +111,14 @@ function getPropertiesRangeByName(sectionName, tabName) {
   if(rowPos == -1) return false;
   
   // Return the section range    
-  var search = sheet.getRange(rowPos, 1, lastRow-rowPos+1, 4).getValues();
+  var search = sheet.getRange(rowPos, 1, lastRow-rowPos+1, 6).getValues();
   var find = 0;
-  for (i=0; i<search.length; i++) {
-    if (search[i][0] != '') {
-      find ++;
-    } else {
-      break;
-    }
+  
+  for (var i=0; i<search.length; i++) {
+    if(search[i][0] == '') break; 
+    find++;
   }
-    
+  
   return sheet.getRange(rowPos, 1, find, lastColumn);
 }
 
