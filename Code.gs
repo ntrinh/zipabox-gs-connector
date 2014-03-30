@@ -471,7 +471,7 @@ function processLights() {
     var endointUUID = search[i][1];
     var devicejson = zipabox.GetDeviceByEndpointUUID(endointUUID);    
     
-    if(!devicejson) break;        
+    if(!devicejson) continue;        
     
     var name = devicejson.name;
     SpreadsheetApp.getActiveSpreadsheet().toast('Getting data for device: '+name, 'Status', 5);
@@ -516,7 +516,7 @@ function processSensors() {
     var endointUUID = search[i][1];
     var devicejson = zipabox.GetDeviceByEndpointUUID(endointUUID);    
     
-    if(!devicejson) break;        
+    if(!devicejson) continue;        
     
     var name = devicejson.name;
     SpreadsheetApp.getActiveSpreadsheet().toast('Getting data for device: '+name, 'Status', 5);
@@ -567,7 +567,7 @@ function processMeters(typeToProcess) {
     var endointUUID = search[i][1];
     var devicejson = zipabox.GetDeviceByEndpointUUID(endointUUID);
     
-    if(!devicejson) break;
+    if(!devicejson) continue;
     
     var name = devicejson.name;
     SpreadsheetApp.getActiveSpreadsheet().toast('Getting data for device: '+name, 'Status', 5);
@@ -577,44 +577,45 @@ function processMeters(typeToProcess) {
       var attribute = devicejson.attributes[attr];
       var attributeName = (typeof attribute.definition != "undefined") ? attribute.definition.name : attribute.name;
       
-      if(attributeName != search[i][2]) break;
-      
-      attribute.canCreateSheet = search[i][5];
-      
-      writelog("Search: "+search.join("/"));
-      writelog("Attribute["+attr+"]: "+JSON.stringify(attribute));
-    
-      //switch on typetoprocess     
-      switch(typeToProcess) {
-        case "TEMPERATURE":
-          //Get temperature
-          _getTemperature(attribute, name, devicejson.endpoint);            
-          break;
-          
-        case "HUMIDITY":
-          _getHumidity(attribute, name, devicejson.endpoint);          
-          break;
-          
-        case "LUMINANCE":
-          _getLuminance(attribute, name, devicejson.endpoint);         
-          break;
-          
-        case "CURRENT_CONSUMPTION":
-          _getCurrentConsumption(attribute, name, devicejson.endpoint);
-          break;
-          
-        case "CUMULATIVE_CONSUMPTION":
-          _getCumulativeConsumption(attribute, name, devicejson.endpoint);
-          break;
-          
-        case "ALL":
-          _getTemperature(attribute, name, devicejson.endpoint);
-          _getHumidity(attribute, name, devicejson.endpoint);
-          _getLuminance(attribute, name, devicejson.endpoint);
-          _getCurrentConsumption(attribute, name, devicejson.endpoint);
-          _getCumulativeConsumption(attribute, name, devicejson.endpoint);
-          break;          
-      } // end switch      
+      writelog("name:"+name+"/attributeName:"+attributeName+"/search[i][2]:"+search[i][2]);
+      if(attributeName == search[i][2]) {      
+        attribute.canCreateSheet = search[i][5];
+        
+        //writelog("Search: "+search.join("/"));
+        writelog("Attribute["+attr+"]: "+JSON.stringify(attribute));
+        
+        //switch on typetoprocess     
+        switch(typeToProcess) {
+          case "TEMPERATURE":
+            //Get temperature
+            _getTemperature(attribute, name, devicejson.endpoint);            
+            break;
+            
+          case "HUMIDITY":
+            _getHumidity(attribute, name, devicejson.endpoint);          
+            break;
+            
+          case "LUMINANCE":
+            _getLuminance(attribute, name, devicejson.endpoint);         
+            break;
+            
+          case "CURRENT_CONSUMPTION":
+            _getCurrentConsumption(attribute, name, devicejson.endpoint);
+            break;
+            
+          case "CUMULATIVE_CONSUMPTION":
+            _getCumulativeConsumption(attribute, name, devicejson.endpoint);
+            break;
+            
+          case "ALL":
+            _getTemperature(attribute, name, devicejson.endpoint);
+            _getHumidity(attribute, name, devicejson.endpoint);
+            _getLuminance(attribute, name, devicejson.endpoint);
+            _getCurrentConsumption(attribute, name, devicejson.endpoint);
+            _getCumulativeConsumption(attribute, name, devicejson.endpoint);
+            break;          
+        } // end switch
+      } // end if
     } // end attributes
   }	// end devices
 }
