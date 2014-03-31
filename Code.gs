@@ -26,9 +26,7 @@ function _initLogin() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(paramName);
   var range = getPropertiesRangeByName("ZIPABOX");
   var search = range.getValues();    
-  
-  //Logger.clear();
-  
+    
   // Convert plain text password in the spreadsheet to SHA1 digest
   for (i=0; i<search.length; i++) {
     if (search[i][0] == 'password') {
@@ -97,7 +95,7 @@ function CollectValuesForFeeds(deviceType, uuid, deviceName, attribute, forcedVa
       "uuid": uuid,
       "attributeName": attributeName
     };
-    writelog("feedID: "+feedID+"\tValue: "+value+"\tUUID: "+uuid);                
+    //writelog("feedID: "+feedID+"\tValue: "+value+"\tUUID: "+uuid);                
   }
 }
 
@@ -479,7 +477,10 @@ function processLights() {
     writelog("Device["+endointUUID+"]: "+JSON.stringify(devicejson));
     
     for (var attr in devicejson.attributes) {
-      var attribute = devicejson.attributes[attr];      
+      var attribute = devicejson.attributes[attr];
+      var attributeName = (typeof attribute.definition != "undefined") ? attribute.definition.name : attribute.name;
+      
+      if(attributeName != search[i][2]) continue;      
       
       attribute.canCreateSheet = search[i][5];
       _getLightState(attribute, name, endointUUID);
@@ -524,11 +525,15 @@ function processSensors() {
     writelog("Device["+endointUUID+"]: "+JSON.stringify(devicejson));
     
     for (var attr in devicejson.attributes) {
-      var attribute = devicejson.attributes[attr];      
+      var attribute = devicejson.attributes[attr];
+      var attributeName = (typeof attribute.definition != "undefined") ? attribute.definition.name : attribute.name;
       
-      attribute.canCreateSheet = search[i][5];
-      _getSensorState(attribute, name, endointUUID);
-      writelog("Attribute["+attr+"]: "+JSON.stringify(attribute));
+      if(attributeName != search[i][2]) continue;              
+
+      writelog("name:"+name+"/attributeName:"+attributeName+"/search[i][2]:"+search[i][2]);
+      writelog("Attribute["+attr+"]: "+JSON.stringify(attribute));              
+      attribute.canCreateSheet = search[i][5];        
+      _getSensorState(attribute, name, endointUUID);      
     }
   }
 }
