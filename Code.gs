@@ -467,7 +467,7 @@ function processLights() {
     
   for (var i=2; i<search.length; i++) {
     var endointUUID = search[i][1];
-    var devicejson = zipabox.GetDeviceByEndpointUUID(endointUUID);    
+    var devicejson = zipabox.GetDeviceByEndpointUUID(endointUUID, "lights");    
     
     if(!devicejson) continue;        
     
@@ -515,7 +515,7 @@ function processSensors() {
     
   for (var i=2; i<search.length; i++) {
     var endointUUID = search[i][1];
-    var devicejson = zipabox.GetDeviceByEndpointUUID(endointUUID);    
+    var devicejson = zipabox.GetDeviceByEndpointUUID(endointUUID, "sensors");    
     
     if(!devicejson) continue;        
     
@@ -569,14 +569,14 @@ function processMeters(typeToProcess) {
   var search = deviceMeters.getValues();
     
   for (var i=2; i<search.length; i++) {
-    var endointUUID = search[i][1];
-    var devicejson = zipabox.GetDeviceByEndpointUUID(endointUUID);
+    var endpointUUID = search[i][1];
+    var devicejson = zipabox.GetDeviceByEndpointUUID(endpointUUID, "meters");
     
     if(!devicejson) continue;
     
     var name = devicejson.name;
     SpreadsheetApp.getActiveSpreadsheet().toast('Getting data for device: '+name, 'Status', 5);
-    writelog("Device["+endointUUID+"]: "+JSON.stringify(devicejson));
+    writelog("Device["+endpointUUID+"]: "+JSON.stringify(devicejson));
     
     for (var attr in devicejson.attributes) {
       var attribute = devicejson.attributes[attr];
@@ -762,4 +762,5 @@ function main(){
   processSensors();
   processLights();
   sendToSense();
+  SpreadsheetApp.getActiveSpreadsheet().toast('Processing data complete!', 'Status', 5);
 }
