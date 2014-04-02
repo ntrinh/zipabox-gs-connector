@@ -13,22 +13,19 @@ function onOpen() {
   var _sheet = SpreadsheetApp.getActiveSpreadsheet();
   var _entries = [
     {
-      name : "Prepare meters feeds for sense",
-      functionName : "processMeters"
+      name : "Initialize Parameters",
+      functionName : "initParamSheet"
     },
     {
-      name : "Prepare sensorsfeeds for sense",
-      functionName : "processSensors"
-    },
-    {
-      name : "Send feeds to sense",
-      functionName : "sendToSense"
+      name : "Process Data",
+      functionName : "main"
     }
   ];
   _sheet.addMenu("Zipabox", _entries);
   
-  Logger.clear();
-};
+  Logger.clear();   
+}
+
 
 /**
  * Get a column index by its name
@@ -74,6 +71,30 @@ function getRowIndexByName(rowName, tabName) {
 }
 
 /**
+ * Get the row range by its UUID
+ * For use with Google Spreadsheets
+ */
+function getRowByUUID(uuid, tabName) {
+  if(!tabName) {
+    tabName = PropertiesService.getScriptProperties().getProperty("paramSheet");
+  }
+  
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(tabName);
+  var numRows = sheet.getLastRow();
+  
+  var row = sheet.getRange(1, 1, numRows, 5).getValues();
+  
+  for (i=0; i<row.length; i++) {
+    var name = row[i][1];
+    if (name == uuid) {
+      return sheet.getRange(i+1, 1, 1, 5);
+    }
+  }
+  
+  return -1;  
+}
+
+/**
  * Get properties range by its section name
  */
 function getPropertiesRangeByName(sectionName, tabName) {
@@ -90,16 +111,14 @@ function getPropertiesRangeByName(sectionName, tabName) {
   if(rowPos == -1) return false;
   
   // Return the section range    
-  var search = sheet.getRange(rowPos, 1, lastRow-rowPos+1, 4).getValues();
+  var search = sheet.getRange(rowPos, 1, lastRow-rowPos+1, 6).getValues();
   var find = 0;
-  for (i=0; i<search.length; i++) {
-    if (search[i][0] != '') {
-      find ++;
-    } else {
-      break;
-    }
+  
+  for (var i=0; i<search.length; i++) {
+    if(search[i][0] == '') break; 
+    find++;
   }
-    
+  
   return sheet.getRange(rowPos, 1, find, lastColumn);
 }
 
@@ -127,9 +146,10 @@ function _insertRecord(name, value) {
  * @param typeDevice : type of the device (meters, sensors, lights...)
  * @param deviceName : the device name, not used at this time
  * @param deviceId : the deviceId from the zipabox
+ * @param attributeName : name of the attribute
  * @return the feedID matching the device, return 0 if not found
  */
-function getFeedID(typeDevice, deviceName, deviceID) {
+function getFeedID(typeDevice, deviceName, deviceID, attributeName) {
   writelog("==> getFeedID ***");
   writelog("checking for typeDevice["+typeDevice+"] / deviceName["+deviceName+"] / deviceID["+deviceID+"]");
   
@@ -147,24 +167,12 @@ function getFeedID(typeDevice, deviceName, deviceID) {
   
   for(var i=1; i<listDevices.length; i++) {    
     // get the sense feedID of the device
-    // check for name first then check for deviceID
-    if(listDevices[i][0] == deviceName) {
-      feedID = listDevices[i][2];
+    if (listDevices[i][1] == deviceID && listDevices[i][2] == attributeName) {
+      feedID = listDevices[i][3];
       writelog("FeedID found = "+feedID+" for device ["+deviceName+"]");
       
       // check if device should be send to sense
-      if(!listDevices[i][3]) {
-        writelog("Device set to FALSE => Not sending");
-        feedID = 0;
-      }
-      
-      break;
-    } else if (listDevices[i][1] == deviceID) {
-      feedID = listDevices[i][2];
-      writelog("FeedID found = "+feedID+" for device ["+deviceName+"]");
-      
-      // check if device should be send to sense
-      if(!listDevices[i][3]) {
+      if(!listDevices[i][4]) {
         writelog("Device set to FALSE => Not sending");
         feedID = 0;
       }
@@ -176,4 +184,21 @@ function getFeedID(typeDevice, deviceName, deviceID) {
   if(parseInt(feedID) == 0) writelog("No feedID found");
   
   return parseInt(feedID);
+}
+
+/**
+ * Create a sheet name
+ * @param name: name of the device
+ * @param type: type of the device
+ */
+function createSheetName(name, type) {
+  var sheetName = name+" - "+type;
+  
+  if(sheetName.length > 50) {
+    var sup = sheetName.length-50;
+    var short = name.length-sup-3;
+    sheetName = name.substr(0, short)+"... - "+type;
+  }
+  
+  return sheetName;  
 }
