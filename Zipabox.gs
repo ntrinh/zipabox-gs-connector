@@ -566,24 +566,39 @@ function GetDeviceByUUID_FN(uuid){
   return null;
 }
 
-function GetDeviceByEndpointUUID_FN(endpoint_uuid){
+function GetDeviceByEndpointUUID_FN(endpoint_uuid, typeDevice){
   writelog("GetDeviceByEndpointUUID : " + (""+endpoint_uuid),false);
-  for(var iddevice in zipabox.devices){			
-    var devicejson = zipabox.devices[iddevice].json;
+  
+  if(!typeDevice) {
+    writelog("[ERROR] Type of device must be specified!");
+    return null;
+  }
+  
+  // Get only the correct device
+  var deviceMeters = null;    
+  for (var iddevice in zipabox.devices) {
+    var device = zipabox.devices[iddevice];    
     
-    for (var uuid in devicejson)
+    if(device.name == typeDevice){ 
+      deviceMeters = device;    
+      break;
+    }
+  }
+   
+  var devicejson = deviceMeters.json;  
+  for (var uuid in devicejson)
+  {
+    if (devicejson[uuid].endpoint == endpoint_uuid)
     {
-      if (devicejson[uuid].endpoint == endpoint_uuid)
-      {
-        writelog("GetDeviceByEndpointUUID : " + (""+endpoint_uuid) + " -> " + "[FOUND]");
-        return devicejson[uuid];	
-      }	
-    }					
+      writelog("GetDeviceByEndpointUUID : " + (""+endpoint_uuid) + " -> " + "[FOUND]");
+      return devicejson[uuid];	
+    }	
   }
   
   writelog("GetDeviceByEndpointUUID : " + (""+endpoint_uuid) + " -> " + "[NOT FOUND]");
   return null;
 }
+
 
 function ZipaboxToString() {
   var retval = this.name + "\r\n";
