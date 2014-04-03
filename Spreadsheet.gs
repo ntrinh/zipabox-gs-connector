@@ -96,6 +96,11 @@ function getRowByUUID(uuid, tabName) {
 
 /**
  * Get properties range by its section name
+ *
+ * @param {String} sectionName Name of the section in the spreadsheet
+ * @param {String} tabName Name of the params sheet
+ * @returns {Range} Range of the section
+ * @customfunction
  */
 function getPropertiesRangeByName(sectionName, tabName) {
   if(!tabName) {
@@ -119,7 +124,7 @@ function getPropertiesRangeByName(sectionName, tabName) {
     find++;
   }
   
-  return sheet.getRange(rowPos, 1, find, lastColumn);
+  return sheet.getRange(rowPos, 1, find, lastColumn+1);
 }
 
 
@@ -130,14 +135,11 @@ function getPropertiesRangeByName(sectionName, tabName) {
  */
 function _insertRecord(name, value) {
   var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = spreadSheet.getSheetByName(name);
-  var lastRow = sheet.getLastRow();
-  var activeRange = sheet.getRange(lastRow+1, 1, lastRow+2, 2);
+  var sheet = spreadSheet.getSheetByName(name);  
   var dateFormat = (typeof zipabox.dateFormat != "undefined") ? zipabox.dateFormat : "dd/MM/yyyy HH:mm:ss";
-  
-  activeRange.getCell(1, 1).setValue(new Date());
-  activeRange.getCell(1, 1).setNumberFormat(dateFormat);
-  activeRange.getCell(1, 2).setValue(value);
+      
+  sheet.appendRow([new Date(), value]);
+  sheet.getRange("A:A").setNumberFormat(dateFormat);
 }
 
 
@@ -151,7 +153,7 @@ function _insertRecord(name, value) {
  */
 function getFeedID(typeDevice, deviceName, deviceID, attributeName) {
   writelog("==> getFeedID ***");
-  writelog("checking for typeDevice["+typeDevice+"] / deviceName["+deviceName+"] / deviceID["+deviceID+"]");
+  writelog("checking for typeDevice["+typeDevice+"] / deviceName["+deviceName+"] / deviceID["+deviceID+"] / attribute["+attributeName+"]");
   
   var feedID = 0;
   var paramName = CacheService.getPrivateCache().get("paramSheet");
@@ -159,13 +161,13 @@ function getFeedID(typeDevice, deviceName, deviceID, attributeName) {
   
   // If no device is found return 0
   if(!range) {
-    writelog("No feedID found");
+    writelog("No feedID found in tab: "+paramName);
     return 0;
   }
   
   var listDevices = range.getValues();
   
-  for(var i=1; i<listDevices.length; i++) {    
+  for(var i=2; i<listDevices.length; i++) {    
     // get the sense feedID of the device
     if (listDevices[i][1] == deviceID && listDevices[i][2] == attributeName) {
       feedID = listDevices[i][3];
