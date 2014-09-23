@@ -4,8 +4,9 @@
 Contributions: 
 [1] This project was greatly inspired by Zipabox Connector written in Python by Frédéric Ravetier.
 http://sourceforge.net/projects/zipabox-connector/
-[2] This project was greatly inspired by "Zipabox" API written in javascript for node.js by djoulz22.
+[2] This project was greatly inspired by "Zipabox" and "Open.sen.se" API written in javascript for node.js by djoulz22.
 https://github.com/djoulz22/zipabox
+https://github.com/djoulz22/Open.Sen.se
 */
 
 
@@ -14,14 +15,22 @@ https://github.com/djoulz22/zipabox
  * 
  */
 function _initLogin() {
-  // Getting the parameters sheet    
-  var paramName = PropertiesService.getScriptProperties().getProperty("paramSheet");
+  // Getting the parameters sheet
+  /*var db = ScriptDb.getMyDb();
+  var results = db.query({
+    name: "paramSheet"
+  });
+  */
+  var documentProperties = PropertiesService.getDocumentProperties();
+  var results = documentProperties.getProperty("paramSheet");
+    
+  CacheService.getPrivateCache().put("paramSheet", results);  
+          
+  var paramName = results;
   
   if(!paramName) {
     paramName = "Paramètres"; //Default value
-  }
-  
-  CacheService.getPrivateCache().put("paramSheet", paramName);
+  }    
   
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(paramName);
   var range = getPropertiesRangeByName("ZIPABOX");
@@ -102,9 +111,9 @@ function CollectValuesForFeeds(deviceType, uuid, deviceName, attribute, forcedVa
 
 /**
  * Get the temperature of a device
- * @param attributeValue : attribute in JSON returned by the zipabox
- * @param name : name of the device
- * @param deviceId : uuid of the device (check logs to see the uuid of the device)
+ * @param {Object} attributeValue : attribute in JSON returned by the zipabox
+ * @param {String} name : name of the device
+ * @param {String} deviceId : uuid of the device (check logs to see the uuid of the device)
  */
 function _getTemperature(attributeValue, name, deviceId) {
   Logger.log("==> _getTemperature ***");
@@ -633,19 +642,34 @@ function initParamSheet() {
   writelog("*** initParamSheet ***");
   
   var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();
-  var paramName = CacheService.getPrivateCache().get("paramSheet");
-  var sheet = spreadSheet.getSheetByName("Paramètres");
+  var paramName = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet().getName();  
+  var sheet = spreadSheet.getSheetByName(paramName);
   var columnsDevice = ["Name", "UUID Endpoint", "Attribute", "Feed ID", "Send to Sense", "Generate sheet"];
   var rule = SpreadsheetApp.newDataValidation().requireValueInList(["FALSE", "TRUE"], true).build();
   
+  /****************************************
+   * ### Saving name of the param sheet ###
+   ****************************************/  
+  
+  /*
+  var db = ScriptDb.getMyDb();
+  var item = db.save({
+    name: "paramSheet",
+    value: paramName
+  }); 
+  */
+  
+  var documentProperties = PropertiesService.getDocumentProperties();
+  documentProperties.setProperty("paramSheet", paramName);
+  
   /*********************
    * ### Saving data ###
-   **********************/  
-  
+   **********************/      
+   
   var saveData = function(typeDevice) {
-    var db = ScriptDb.getMyDb();
+    //var db = ScriptDb.getMyDb();
     
-    var deviceMeters = getPropertiesRangeByName(typeDevice);  
+    var deviceMeters = getPropertiesRangeByName(typeDevice, paramName);  
     var search = deviceMeters ? deviceMeters.getValues() : [];
     
     for (var i=2; i<search.length; i++) {
@@ -656,6 +680,7 @@ function initParamSheet() {
       var canSendFeed = search[i][4];
       var canCreateSheet = search[i][5];
       
+      /*
       var item = db.save({
         type: typeDevice,
         name: name,
@@ -665,24 +690,36 @@ function initParamSheet() {
         canSendFeed: canSendFeed,
         canCreateSheet: canCreateSheet
       });
+      
+     */
+      
+      var key1 = typeDevice+"-"+endointUUID+"-"+attributeName+"-feedID";
+      var key2 = typeDevice+"-"+endointUUID+"-"+attributeName+"-canSendFeed";
+      var key3 = typeDevice+"-"+endointUUID+"-"+attributeName+"-canCreateSheet";
+      
+      documentProperties.setProperty(key1, feedID);
+      documentProperties.setProperty(key2, canSendFeed);
+      documentProperties.setProperty(key3, canCreateSheet);
     }
-  }
-  
+  }  
+    
   SpreadsheetApp.getActiveSpreadsheet().toast('Saving data', 'Status', 5);
   
   saveData('meters');
   saveData('sensors');
-  saveData('lights');    
+  saveData('lights');  
+  
   
   // Clear data
-  sheet.getRange("A13:G900").clear();
+  sheet.getRange("A13:G900").clear().clearDataValidations();  
   
   /*********************************************************
    * ### Processing data from Zipabox in the spreadsheet ###
    *********************************************************/  
   
   var processData = function(typeDevice) {
-    var db = ScriptDb.getMyDb();
+    //var db = ScriptDb.getMyDb();
+    var documentProperties = PropertiesService.getDocumentProperties();
     var lastRow = sheet.getLastRow()+2;
     var activeRange = sheet.getRange(lastRow, 1, 1, columnsDevice.length);
     
@@ -727,22 +764,18 @@ function initParamSheet() {
         tmpRange.getCell(result.getLastRow(), 5).setDataValidation(rule);
         tmpRange.getCell(result.getLastRow(), 6).setDataValidation(rule);
         
-        // Restore data        
-        var results = db.query({
-          type: typeDevice,
-          endpoint: endpoint,
-          attribute: nameAttribute
-        });
+        // Restore data
+        var feedID = documentProperties.getProperty(typeDevice+"-"+endpoint+"-"+nameAttribute+"-feedID");
+        var canSendFeed = documentProperties.getProperty(typeDevice+"-"+endpoint+"-"+nameAttribute+"-canSendFeed");
+        var canCreateSheet = documentProperties.getProperty(typeDevice+"-"+endpoint+"-"+nameAttribute+"-canCreateSheet");
         
-        while(results.hasNext()) {
-          var item = results.next();
-          tmpRange.getCell(result.getLastRow(), 4).setValue(item.feedID);
-          tmpRange.getCell(result.getLastRow(), 5).setValue(item.canSendFeed);
-          tmpRange.getCell(result.getLastRow(), 6).setValue(item.canCreateSheet);
-        }
+        tmpRange.getCell(result.getLastRow(), 4).setValue(parseInt(feedID) ? parseInt(feedID) : '');
+        tmpRange.getCell(result.getLastRow(), 5).setValue(canSendFeed ? canSendFeed : false);
+        tmpRange.getCell(result.getLastRow(), 6).setValue(canCreateSheet ? canCreateSheet : false);
+        
       } // end attributes
     } // end devices  
-  } // end function
+  }; // end function
   
   SpreadsheetApp.getActiveSpreadsheet().toast('Processing data from Zipabox', 'Status', 5);
   
