@@ -12,15 +12,9 @@ https://github.com/djoulz22/Open.Sen.se
 
 /**
  * Init Zipabox with data from the Spreadsheets
- * 
+ * Password will be modified with SHA1 hash
  */
 function _initLogin() {
-  // Getting the parameters sheet
-  /*var db = ScriptDb.getMyDb();
-  var results = db.query({
-    name: "paramSheet"
-  });
-  */
   var documentProperties = PropertiesService.getDocumentProperties();
   var results = documentProperties.getProperty("paramSheet");
     
@@ -285,6 +279,117 @@ function _getCumulativeConsumption(attributeValue, name, deviceId) {
        _insertRecord(sheetName, value);
      }
   }
+}
+
+
+/**
+ * Get the voltage
+ * @param attributeValue : attribute in JSON returned by the zipabox
+ * @param name : name of the device
+ * @param deviceId : uuid of the device (check logs to see the uuid of the device)
+ */
+function _getVoltage(attributeValue, name, deviceId) {
+  Logger.log("==> _getVoltage ***");
+  
+  var type = "VOLT";
+  
+  // Apply a filter on CUMULATIVE_CONSUMPTION              
+  if (attributeValue['definition']['name'] == "VOLTAGE") {
+    CollectValuesForFeeds("meters", deviceId, name, attributeValue);
+    
+    // Insert a record in the spreadsheet 
+    if(attributeValue.canCreateSheet) {
+       var sheetName = createSheetName(name, type);
+       var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();    
+      
+       if (!spreadSheet.getSheetByName(sheetName)) {
+         spreadSheet.insertSheet(sheetName);
+         spreadSheet.getSheetByName(sheetName).appendRow(["Voltage", deviceId]);
+         spreadSheet.getSheetByName(sheetName).appendRow(["Timestamp", "Value"]);
+         spreadSheet.getSheetByName(sheetName).getRange("A2:B2").setBackground("purple");
+         spreadSheet.getSheetByName(sheetName).getRange("A2:B2").setFontColor("white");
+       }
+       
+       var value = parseFloat(attributeValue['value']); // French format with 2 decimals
+       writelog("Insert values in spreadsheet for device ["+name+"] / Value: "+value);
+       _insertRecord(sheetName, value);
+     }
+  }
+}
+
+/**
+ * Get the current
+ * @param attributeValue : attribute in JSON returned by the zipabox
+ * @param name : name of the device
+ * @param deviceId : uuid of the device (check logs to see the uuid of the device)
+ */
+function _getCurrent(attributeValue, name, deviceId) {
+  Logger.log("==> _getCurrent ***");
+  
+  var type = "CURRENT";
+  
+  // Apply a filter on CUMULATIVE_CONSUMPTION              
+  if (attributeValue['definition']['name'] == "CURRENT") {
+    CollectValuesForFeeds("meters", deviceId, name, attributeValue);
+    
+    // Insert a record in the spreadsheet 
+    if(attributeValue.canCreateSheet) {
+       var sheetName = createSheetName(name, type);
+       var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();    
+      
+       if (!spreadSheet.getSheetByName(sheetName)) {
+         spreadSheet.insertSheet(sheetName);
+         spreadSheet.getSheetByName(sheetName).appendRow(["Current", deviceId]);
+         spreadSheet.getSheetByName(sheetName).appendRow(["Timestamp", "Value"]);
+         spreadSheet.getSheetByName(sheetName).getRange("A2:B2").setBackground("purple");
+         spreadSheet.getSheetByName(sheetName).getRange("A2:B2").setFontColor("white");
+       }
+       
+       var value = parseFloat(attributeValue['value']); // French format with 2 decimals
+       writelog("Insert values in spreadsheet for device ["+name+"] / Value: "+value);
+       _insertRecord(sheetName, value);
+     }
+  }
+}
+
+
+/**
+ * Get the meter state
+ * @param attributeValue : attribute in JSON returned by the zipabox
+ * @param name : name of the device
+ * @param deviceId : uuid of the device (check logs to see the uuid of the device)
+ */
+function _getMeterState(attributeValue, name, deviceId) {
+  writelog("==> _getMeterState ***");
+  
+  //var type = "METER";
+  var value = attributeValue['value'];
+  var attributeName = (typeof attributeValue.definition != "undefined") ? attributeValue.definition.name : attributeValue.name;
+  
+  // Get the semantic of the meter value  
+  if((typeof attributeValue['definition'] != "undefined") && (typeof attributeValue['definition']['enumValues'] != "undefined")) {
+    value = attributeValue['definition']['enumValues'][attributeValue['value']];
+  }
+  
+  CollectValuesForFeeds("meters", deviceId, name, attributeValue, value);  
+  
+  // Insert a record in the spreadsheet
+  if(attributeValue.canCreateSheet) {
+    var sheetName = createSheetName(name, attributeName);
+    var spreadSheet = SpreadsheetApp.getActiveSpreadsheet();
+    
+    if (!spreadSheet.getSheetByName(sheetName)) {
+      spreadSheet.insertSheet(sheetName);
+      spreadSheet.getSheetByName(sheetName).appendRow([name, attributeName, deviceId]).appendRow(["Timestamp", "Value"]);
+      spreadSheet.getSheetByName(sheetName).getRange("A2:B2").setBackground("purple").setFontColor("white");
+    }
+    
+    value = parseFloat(value); 
+    writelog("Insert values in spreadsheet for device ["+name+"] / Value: "+value);
+    _insertRecord(sheetName, value); 
+  }
+ 
+  writelog("*** _getMeterState <==");
 }
 
 
@@ -621,22 +726,36 @@ function processMeters(typeToProcess) {
             _getCumulativeConsumption(attribute, name, devicejson.endpoint);
             break;
             
+          case "VOLTAGE":
+            _getVoltage(attribute, name, devicejson.endpoint);
+            break;
+            
+          case "CURRENT":
+            _getCurrent(attribute, name, devicejson.endpoint);
+            break;
+            
           case "ALL":
+            _getMeterState(attribute, name, devicejson.endpoint);
+            /*
             _getTemperature(attribute, name, devicejson.endpoint);
             _getHumidity(attribute, name, devicejson.endpoint);
             _getLuminance(attribute, name, devicejson.endpoint);
             _getCurrentConsumption(attribute, name, devicejson.endpoint);
             _getCumulativeConsumption(attribute, name, devicejson.endpoint);
+            _getVoltage(attribute, name, devicejson.endpoint);
+            _getCurrent(attribute, name, devicejson.endpoint);
+            */
             break;          
         } // end switch
       } // end if
-    } // end attributes
-  }	// end devices
+    } // end attributes loop
+  }	// end devices loop
 }
 
 
 /**
- * Initialize the param sheet with devices
+ * Initialize the param sheet with list of zipabox devices
+ * Current sheet will be used to init the list
  */
 function initParamSheet() {
   writelog("*** initParamSheet ***");
@@ -651,14 +770,6 @@ function initParamSheet() {
    * ### Saving name of the param sheet ###
    ****************************************/  
   
-  /*
-  var db = ScriptDb.getMyDb();
-  var item = db.save({
-    name: "paramSheet",
-    value: paramName
-  }); 
-  */
-  
   var documentProperties = PropertiesService.getDocumentProperties();
   documentProperties.setProperty("paramSheet", paramName);
   
@@ -667,8 +778,6 @@ function initParamSheet() {
    **********************/      
    
   var saveData = function(typeDevice) {
-    //var db = ScriptDb.getMyDb();
-    
     var deviceMeters = getPropertiesRangeByName(typeDevice, paramName);  
     var search = deviceMeters ? deviceMeters.getValues() : [];
     
@@ -679,19 +788,6 @@ function initParamSheet() {
       var feedID = search[i][3];
       var canSendFeed = search[i][4];
       var canCreateSheet = search[i][5];
-      
-      /*
-      var item = db.save({
-        type: typeDevice,
-        name: name,
-        endpoint: endointUUID,
-        attribute: attributeName,
-        feedID: feedID,
-        canSendFeed: canSendFeed,
-        canCreateSheet: canCreateSheet
-      });
-      
-     */
       
       var key1 = typeDevice+"-"+endointUUID+"-"+attributeName+"-feedID";
       var key2 = typeDevice+"-"+endointUUID+"-"+attributeName+"-canSendFeed";
@@ -718,7 +814,6 @@ function initParamSheet() {
    *********************************************************/  
   
   var processData = function(typeDevice) {
-    //var db = ScriptDb.getMyDb();
     var documentProperties = PropertiesService.getDocumentProperties();
     var lastRow = sheet.getLastRow()+2;
     var activeRange = sheet.getRange(lastRow, 1, 1, columnsDevice.length);
