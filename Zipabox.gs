@@ -719,7 +719,7 @@ var zipabox = {
   showlog: true,	
   show_datetime_in_log: true,
   checkforupdate_auto: true,
-  baseURL: "https://my.zipato.com:443/zipato-web/rest/",
+  baseURL: "https://my.zipato.com:443/zipato-web/v2/",
   initURL: "user/init",  
   loginURL: "user/login?username=[username]&token=[token]",
   logoutURL: "user/logout",	
